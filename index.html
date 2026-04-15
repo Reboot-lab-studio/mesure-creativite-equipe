@@ -1146,7 +1146,7 @@ function generatePDF() {
         doc.setFillColor(...ACC);
         doc.rect(0, 0, pw, 9, 'F');
         sf('bold', 7, WHITE);
-        doc.text('INDICATEUR DE CRÉATIVITÉ D'ÉQUIPE', ml, 6);
+        doc.text(`INDICATEUR DE CRÉATIVITÉ D'ÉQUIPE`, ml, 6);
         doc.text('benjaminchaminade.com', pw - mr, 6, { align: 'right' });
       }
 
@@ -1164,7 +1164,7 @@ function generatePDF() {
       doc.rect(0, 0, pw, 50, 'F');
 
       sf('normal', 7, [255,220,200]);
-      doc.text('OUTIL D'ÉVALUATION', ml, 13);
+      doc.text(`OUTIL D'ÉVALUATION`, ml, 13);
 
       sf('bold', 20, WHITE);
       doc.text('Indicateur de créativité', ml, 25);
@@ -1199,7 +1199,7 @@ function generatePDF() {
       doc.setFillColor(...INK);
       doc.roundedRect(ml, y, cw, 36, 2, 2, 'F');
       sf('normal', 6.5, LIGHT);
-      doc.text('SCORE GLOBAL DE CRÉATIVITÉ D'ÉQUIPE', ml + cw / 2, y + 8, { align: 'center' });
+      doc.text(`SCORE GLOBAL DE CRÉATIVITÉ D'ÉQUIPE`, ml + cw / 2, y + 8, { align: 'center' });
       sf('bold', 40, ACC);
       doc.text(String(global), ml + cw / 2 - 6, y + 26, { align: 'right' });
       sf('normal', 14, LIGHT);
@@ -1243,7 +1243,7 @@ function generatePDF() {
       y += 2 * (cardH + 4) + 6;
 
       // Synthèse
-      const synthText = 'Avec un score global de ' + global + '/100, l'équipe se situe au niveau « ' + globalLvl.label + ' ». Sa principale force est la dimension ' + strongDim.name + ' (' + dimScores[strongIdx] + '/100). La dimension ' + weakDim.name + ' (' + dimScores[weakIdx] + '/100) mérite le plus d'attention.';
+      const synthText = `Avec un score global de ${global}/100, l'équipe se situe au niveau « ${globalLvl.label} ». Sa principale force est la dimension ${strongDim.name} (${dimScores[strongIdx]}/100). La dimension ${weakDim.name} (${dimScores[weakIdx]}/100) mérite le plus d'attention.`;
       const synthLines = doc.splitTextToSize(synthText, cw - 10);
       const synthH = synthLines.length * 5 + 12;
 
@@ -1337,7 +1337,7 @@ function generatePDF() {
       y += 9;
 
       sf('normal', 8.5, INK);
-      const intro = 'Cet indicateur a été développé sur la base des recherches présentées dans l'article « Comment mesurer la créativité de son équipe » disponible sur benjaminchaminade.com/mesure-creativite-equipe/';
+      const intro = `Cet indicateur a été développé sur la base des recherches présentées dans l'article « Comment mesurer la créativité de son équipe » disponible sur benjaminchaminade.com/mesure-creativite-equipe/`;
       const introLines = doc.splitTextToSize(intro, cw);
       doc.text(introLines, ml, y);
       y += introLines.length * 5 + 7;
@@ -1395,6 +1395,7 @@ function generatePDF() {
     btn.disabled = false;
   }, 300);
 }
+} // fin generatePDF
 
 // Radar dessiné sur un canvas arbitraire (pour PDF haute résolution)
 function drawRadarOnCanvas(canvas, scores) {
