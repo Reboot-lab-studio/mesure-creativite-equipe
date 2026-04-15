@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Indicateur de créativité d'équipe — Benjamin Chaminade</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
   :root {
     --ink: #1a1a1a;
@@ -1093,17 +1093,21 @@ function drawRadar(scores) {
 // ══════════════════════════════════════════════════════
 function generatePDF() {
   const btn = document.getElementById('pdf-btn');
-  btn.textContent = '⏳ Génération en cours…';
+  btn.textContent = '⏳ Chargement…';
   btn.disabled = true;
 
-  // Redessiner le radar sur un canvas offscreen haute résolution
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = 600; offCanvas.height = 600;
-  drawRadarOnCanvas(offCanvas, dimensions.map(d => calcDimScore(d.key, d.questions.length)));
+  // Charger jsPDF dynamiquement seulement au moment du clic
+  function doGenerate() {
+    btn.textContent = '⏳ Génération en cours…';
 
-  setTimeout(() => {
-    try {
-      const { jsPDF } = window.jspdf;
+    // Redessiner le radar sur un canvas offscreen haute résolution
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = 600; offCanvas.height = 600;
+    drawRadarOnCanvas(offCanvas, dimensions.map(d => calcDimScore(d.key, d.questions.length)));
+
+    setTimeout(() => {
+      try {
+        const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const pw = 210, ph = 297;
       const ml = 18, mr = 18;
@@ -1476,7 +1480,12 @@ function drawRadarOnCanvas(canvas, scores) {
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
-buildScreens();
+try {
+  buildScreens();
+} catch(e) {
+  console.error('Erreur init:', e);
+  document.querySelector('.container').innerHTML = '<p style="padding:2rem;color:red">Erreur de chargement : ' + e.message + '</p>';
+}
 </script>
 </body>
 </html>
