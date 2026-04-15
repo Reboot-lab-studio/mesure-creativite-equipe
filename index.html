@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicateur de créativité d'équipe — Benjamin Chaminade</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --cream: #f5f0e8;
+    --accent: #c8440f;
+    --accent-light: #f0d6cc;
+    --mid: #8a7e72;
+    --line: #d4cdc4;
+    --white: #ffffff;
+    --success: #2d6a4f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--accent);
+    color: var(--white);
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 40px,
+      rgba(0,0,0,.06) 40px,
+      rgba(0,0,0,.06) 41px
+    );
+  }
+  header .eyebrow {
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.75);
+    margin-bottom: .6rem;
+    position: relative;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1.1;
+    color: #ffffff !important;
+    position: relative;
+  }
+  header p {
+    margin-top: .8rem;
+    color: rgba(255,255,255,.75);
+    font-size: .92rem;
+    font-weight: 300;
+    max-width: 520px;
+    margin-inline: auto;
+    position: relative;
+  }
+
+  /* ── STEPS BAR ── */
+  .steps-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    overflow-x: auto;
+  }
+  .step-tab {
+    padding: 1rem 1.6rem;
+    font-size: .8rem;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mid);
+    border-bottom: 3px solid transparent;
+    cursor: default;
+    white-space: nowrap;
+    transition: color .2s;
+  }
+  .step-tab.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+  .step-tab.done {
+    color: var(--success);
+  }
+
+  /* ── MAIN CONTAINER ── */
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  /* ── SCREEN ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── INTRO SCREEN ── */
+  .intro-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .intro-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .intro-card p {
+    color: #444;
+    line-height: 1.7;
+    font-size: .95rem;
+    margin-bottom: .8rem;
+  }
+  .dimensions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .8rem;
+    margin-top: 1.5rem;
+  }
+  .dim-chip {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    padding: .9rem 1.1rem;
+    border-radius: 2px;
+  }
+  .dim-chip .dim-num {
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .dim-chip .dim-name {
+    font-weight: 600;
+    font-size: .95rem;
+    margin-top: .2rem;
+  }
+  .dim-chip .dim-desc {
+    font-size: .8rem;
+    color: var(--mid);
+    margin-top: .3rem;
+    line-height: 1.4;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .field label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mid);
+  }
+  .field input, .field select {
+    border: 1px solid var(--line);
+    background: var(--white);
+    padding: .7rem .9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .92rem;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+  }
+
+  /* ── DIMENSION SECTION ── */
+  .dim-section {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .dim-section::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--accent);
+    border-radius: 2px 0 0 2px;
+  }
+  .dim-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .dim-badge {
+    background: var(--accent);
+    color: var(--white);
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .85rem;
+    flex-shrink: 0;
+  }
+  .dim-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+  }
+  .dim-subtitle {
+    font-size: .82rem;
+    color: var(--mid);
+    margin-top: .2rem;
+  }
+
+  /* ── QUESTION ── */
+  .question-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .question-item:last-child { border-bottom: none; }
+  .question-text {
+    font-size: .92rem;
+    line-height: 1.5;
+    margin-bottom: .8rem;
+    color: #333;
+  }
+  .rating-row {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+  }
+  .rating-label {
+    font-size: .72rem;
+    color: var(--mid);
+    white-space: nowrap;
+  }
+  .rating-options {
+    display: flex;
+    gap: .35rem;
+    flex: 1;
+    justify-content: center;
+  }
+  .rating-btn {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--mid);
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .rating-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(1.08);
+  }
+  .rating-btn.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--white);
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap {
+    background: var(--line);
+    height: 4px;
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .4s ease;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .85rem 2rem;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .88rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    border-radius: 2px;
+    transition: all .2s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: #a33508; transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .btn-outline:hover { background: var(--ink); color: var(--white); }
+  .btn-success {
+    background: var(--success);
+    color: var(--white);
+  }
+  .btn-success:hover { background: #1e4d36; }
+  .btn-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+  }
+
+  /* ── RESULTS ── */
+  .results-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .results-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    margin-bottom: .5rem;
+  }
+  .results-meta {
+    font-size: .85rem;
+    color: var(--mid);
+  }
+
+  .global-score-wrap {
+    background: var(--accent);
+    color: var(--white);
+    border-radius: 2px;
+    padding: 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .global-score-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; right: -30px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 40px solid rgba(200,68,15,.2);
+  }
+  .global-score-label {
+    font-size: .75rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,.6);
+    margin-bottom: .8rem;
+  }
+  .global-score-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 5rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .global-score-max { font-size: 1.5rem; color: rgba(245,240,232,.4); }
+  .global-score-label2 {
+    margin-top: .8rem;
+    font-size: 1rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dim-results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .dim-result-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1.4rem;
+  }
+  .dim-result-name {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: .4rem;
+  }
+  .dim-result-score {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--ink);
+  }
+  .dim-result-max { font-size: 1rem; color: var(--mid); }
+  .dim-bar-wrap {
+    background: var(--line);
+    height: 6px;
+    border-radius: 3px;
+    margin-top: .7rem;
+    overflow: hidden;
+  }
+  .dim-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 1s ease;
+  }
+  .dim-result-level {
+    font-size: .75rem;
+    color: var(--mid);
+    margin-top: .5rem;
+  }
+
+  /* ── INTERPRETATION ── */
+  .interpretation-block {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .interpretation-block h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .interpretation-block p {
+    font-size: .92rem;
+    line-height: 1.7;
+    color: #444;
+  }
+  .reco-list {
+    list-style: none;
+    margin-top: .8rem;
+  }
+  .reco-list li {
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: .88rem;
+    color: #444;
+    line-height: 1.5;
+    display: flex;
+    gap: .6rem;
+  }
+  .reco-list li:last-child { border-bottom: none; }
+  .reco-list li::before {
+    content: '→';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  /* ── RADAR CHART ── */
+  .radar-wrap {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .radar-wrap h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+  #radarCanvas { max-width: 100%; }
+
+  /* ── FOOTER NOTE ── */
+  .source-note {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: .76rem;
+    color: var(--mid);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .source-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .source-note a:hover { text-decoration: underline; }
+
+  /* ── ALERT ── */
+  .alert {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    padding: .9rem 1.1rem;
+    border-radius: 0 2px 2px 0;
+    font-size: .85rem;
+    color: var(--ink);
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .alert.visible { display: block; }
+
+  @media (max-width: 560px) {
+    .dimensions-grid, .dim-results-grid, .field-group { grid-template-columns: 1fr; }
+    .rating-btn { width: 2rem; height: 2rem; font-size: .75rem; }
+    .global-score-number { font-size: 3.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Outil d'évaluation</div>
+  <h1>Indicateur de créativité<br>de votre équipe</h1>
+  <p>20 questions. 4 dimensions. Un rapport PDF à partager.</p>
+</header>
+
+<div class="steps-bar">
+  <div class="step-tab active" id="tab-0">Présentation</div>
+  <div class="step-tab" id="tab-1">Exploration</div>
+  <div class="step-tab" id="tab-2">Génération</div>
+  <div class="step-tab" id="tab-3">Championing</div>
+  <div class="step-tab" id="tab-4">Application</div>
+  <div class="step-tab" id="tab-5">Résultats</div>
+</div>
+
+<div class="container">
+
+  <!-- ══ SCREEN 0 : INTRO ══ -->
+  <div class="screen active" id="screen-0">
+    <div class="intro-card">
+      <h2>Comment fonctionne cet indicateur ?</h2>
+      <p>Cet outil mesure la créativité de votre équipe à travers quatre dimensions comportementales validées par la recherche. Il s'adresse aux managers qui souhaitent obtenir une photographie précise de la dynamique créative de leur équipe et identifier où concentrer leurs efforts.</p>
+      <p>Répondez à chaque question en pensant à votre équipe dans son ensemble sur les trois derniers mois. L'évaluation prend environ 5 à 8 minutes. Vous pouvez ensuite télécharger un rapport PDF de restitution.</p>
+      <div class="dimensions-grid">
+        <div class="dim-chip">
+          <div class="dim-num">01</div>
+          <div class="dim-name">Exploration</div>
+          <div class="dim-desc">Capacité à repérer les opportunités et les dysfonctionnements avant les autres.</div>
+        </div>
+        <div class="dim-chip">
+          <div class="dim-num">02</div>
+          <div class="dim-name">Génération</div>
+          <div class="dim-desc">Aptitude à produire des idées originales et à recombiner l'existant.</div>
+        </div>
+        <div class="dim-chip">
+          <div class="dim-num">03</div>
+          <div class="dim-name">Championing</div>
+          <div class="dim-desc">Volonté de défendre, promouvoir et mobiliser du soutien autour des idées.</div>
+        </div>
+        <div class="dim-chip">
+          <div class="dim-num">04</div>
+          <div class="dim-name">Application</div>
+          <div class="dim-desc">Engagement dans la mise en oeuvre concrète jusqu'au bout.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="intro-card">
+      <h2>Votre contexte</h2>
+      <div class="field-group">
+        <div class="field">
+          <label>Votre prénom</label>
+          <input type="text" id="firstName" placeholder="ex. Sophie">
+        </div>
+        <div class="field">
+          <label>Taille de l'équipe évaluée</label>
+          <select id="teamSize">
+            <option value="">Sélectionner</option>
+            <option value="2-5">2 à 5 personnes</option>
+            <option value="6-10">6 à 10 personnes</option>
+            <option value="11-20">11 à 20 personnes</option>
+            <option value="21+">Plus de 20 personnes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Secteur</label>
+          <input type="text" id="sector" placeholder="ex. Services, Industrie…">
+        </div>
+        <div class="field">
+          <label>Votre rôle</label>
+          <select id="role">
+            <option value="">Sélectionner</option>
+            <option value="Manager de proximité">Manager de proximité</option>
+            <option value="Directeur / Directrice">Directeur / Directrice</option>
+            <option value="DRH / RRH">DRH / RRH</option>
+            <option value="Dirigeant">Dirigeant</option>
+            <option value="Consultant">Consultant</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert" id="intro-alert">Veuillez renseigner votre prénom avant de commencer.</div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn btn-primary" onclick="startQuiz()">Commencer l'évaluation →</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREENS 1–4 : QUESTIONS ══ -->
+  <div class="screen" id="screen-1"></div>
+  <div class="screen" id="screen-2"></div>
+  <div class="screen" id="screen-3"></div>
+  <div class="screen" id="screen-4"></div>
+
+  <!-- ══ SCREEN 5 : RESULTS ══ -->
+  <div class="screen" id="screen-5">
+    <div class="results-header">
+      <h2>Résultats de l'évaluation</h2>
+      <p class="results-meta" id="results-meta"></p>
+    </div>
+
+    <div class="global-score-wrap">
+      <div class="global-score-label">Score global de créativité d'équipe</div>
+      <div>
+        <span class="global-score-number" id="global-score">—</span>
+        <span class="global-score-max">/100</span>
+      </div>
+      <div class="global-score-label2" id="global-level">—</div>
+    </div>
+
+    <div class="dim-results-grid" id="dim-results-grid"></div>
+
+    <div class="radar-wrap">
+      <h3>Profil créatif de l'équipe</h3>
+      <canvas id="radarCanvas" width="480" height="360"></canvas>
+    </div>
+
+    <div id="interpretation-section"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="restart()">← Recommencer</button>
+      <button class="btn btn-success" onclick="generatePDF()" id="pdf-btn">
+        ↓ Télécharger le rapport PDF
+      </button>
+    </div>
+
+    <div class="source-note">
+      Cet indicateur a été développé sur la base des recherches présentées dans l'article
+      <a href="https://benjaminchaminade.com/mesure-creativite-equipe/" target="_blank">
+        Comment mesurer la créativité de son équipe
+      </a>
+      par Benjamin Chaminade — notamment les travaux de De Jong & Den Hartog (2008), Batey (2012), Amabile (1996), Guilford (1967) et Torrance (1974).
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const dimensions = [
+  {
+    id: 1,
+    key: 'exploration',
+    name: 'Exploration d\'opportunités',
+    color: '#c8440f',
+    desc: 'Capacité à identifier les pistes d\'amélioration, les dysfonctionnements et les opportunités avant qu\'ils ne s\'imposent.',
+    questions: [
+      'Les membres de l\'équipe remarquent spontanément ce qui pourrait être amélioré dans les processus ou les pratiques.',
+      'L\'équipe s\'intéresse aux signaux faibles et aux tendances extérieures à son périmètre habituel.',
+      'Les collaborateurs prennent le temps de se demander pourquoi certaines choses ne fonctionnent pas, même lorsque l\'urgence ne les y oblige pas.',
+      'L\'équipe va chercher de l\'information et des points de vue en dehors de l\'organisation (clients, partenaires, autres secteurs).',
+      'Les membres de l\'équipe posent des questions sur des sujets qui ne font pas directement partie de leur mission.',
+    ]
+  },
+  {
+    id: 2,
+    key: 'generation',
+    name: 'Génération d\'idées',
+    color: '#c8440f',
+    desc: 'Aptitude à produire des idées originales, à combiner des éléments existants d\'une façon nouvelle, à proposer des solutions inédites.',
+    questions: [
+      'L\'équipe propose régulièrement des solutions originales à des problèmes récurrents.',
+      'Les collaborateurs combinent des idées venant de domaines différents pour créer quelque chose de nouveau.',
+      'Face à un obstacle, l\'équipe cherche plusieurs approches alternatives plutôt que de s\'arrêter à la première.',
+      'Il existe un espace (formel ou informel) pour proposer des idées sans jugement immédiat.',
+      'Les membres de l\'équipe sont reconnus et encouragés lorsqu\'ils proposent des idées nouvelles, même imparfaites.',
+    ]
+  },
+  {
+    id: 3,
+    key: 'championing',
+    name: 'Championing',
+    color: '#c8440f',
+    desc: 'Volonté et capacité à défendre une idée, à convaincre les parties prenantes, à mobiliser du soutien pour qu\'une idée vive.',
+    questions: [
+      'Quand un collaborateur croit en une idée, il fait les démarches nécessaires pour la défendre auprès des décideurs.',
+      'L\'équipe sait convaincre d\'autres services ou la direction de l\'intérêt d\'une initiative nouvelle.',
+      'Les idées ne meurent pas en réunion : quelqu\'un prend en charge leur suivi et leur promotion.',
+      'Il y a dans l\'équipe des personnes capables de vendre une idée imparfaite avec suffisamment de conviction pour lui donner une chance.',
+      'L\'équipe ne renonce pas à une bonne idée au premier refus ou au premier obstacle organisationnel.',
+    ]
+  },
+  {
+    id: 4,
+    key: 'application',
+    name: 'Application',
+    color: '#c8440f',
+    desc: 'Engagement dans la mise en oeuvre concrète : tester, ajuster, déployer, jusqu\'à ce que l\'idée devienne une réalité opérationnelle.',
+    questions: [
+      'L\'équipe passe effectivement à l\'action sur les idées retenues, sans attendre que tout soit parfait.',
+      'Les collaborateurs testent leurs idées à petite échelle avant de demander des ressources importantes.',
+      'Les innovations déployées sont intégrées dans les pratiques de travail de façon durable.',
+      'L\'équipe tire des enseignements systématiques de ses tentatives, qu\'elles aient réussi ou échoué.',
+      'Il y a un suivi régulier de l\'avancement des initiatives créatives en cours.',
+    ]
+  }
+];
+
+const levels = [
+  { min: 0,  max: 39, label: 'Créativité à réveiller',      color: '#b94040' },
+  { min: 40, max: 59, label: 'Créativité émergente',         color: '#d4781a' },
+  { min: 60, max: 74, label: 'Créativité active',            color: '#d4a017' },
+  { min: 75, max: 89, label: 'Créativité bien installée',    color: '#4a8c5c' },
+  { min: 90, max: 100,label: 'Créativité haute performance', color: '#2d6a4f' }
+];
+
+const dimLevels = [
+  { min: 0,  max: 39, label: 'Faible' },
+  { min: 40, max: 59, label: 'Modéré' },
+  { min: 60, max: 74, label: 'Correct' },
+  { min: 75, max: 89, label: 'Fort' },
+  { min: 90, max: 100,label: 'Excellent' }
+];
+
+const recommendations = {
+  exploration: {
+    low:  ['Organisez des sessions de veille externe régulières (1h / mois minimum).', 'Encouragez les échanges avec des interlocuteurs hors de l\'organisation.', 'Mettez en place un rituel de partage de signaux faibles en début de réunion.'],
+    mid:  ['Formalisez un canal de remontée des observations terrain.', 'Variez les sources d\'inspiration de l\'équipe (visites, conférences, lectures).'],
+    high: ['Capitalisez cette force en structurant la veille collaborative.', 'Faites de l\'équipe une source d\'alertes stratégiques pour l\'organisation.']
+  },
+  generation: {
+    low:  ['Introduisez des rituels de brainstorming structuré (individuel puis collectif).', 'Créez un espace sûr où proposer une idée imparfaite n\'est pas risqué.', 'Valorisez publiquement les tentatives créatives, pas seulement les succès.'],
+    mid:  ['Diversifiez les méthodes de génération d\'idées (analogies, contraintes créatives).', 'Développez la pensée analogique par des apports extérieurs au secteur.'],
+    high: ['Documentez les méthodes qui fonctionnent pour les transmettre.', 'Créez des occasions de partage inter-équipes pour cross-polléniser les idées.']
+  },
+  championing: {
+    low:  ['Identifiez qui dans l\'équipe peut jouer le rôle de champion et accompagnez-le.', 'Créez un processus clair pour soumettre une idée et recevoir un retour.', 'Réduisez les obstacles organisationnels qui découragent la prise d\'initiative.'],
+    mid:  ['Entraînez l\'équipe à formuler une idée de façon convaincante (pitch court).', 'Assurez-vous que les idées proposées reçoivent un retour dans un délai raisonnable.'],
+    high: ['Capitalisez en faisant de ces champions des relais auprès d\'autres équipes.', 'Documentez les idées défendues avec succès pour en tirer des apprentissages.']
+  },
+  application: {
+    low:  ['Instaurez une culture du test rapide : petites expériences à faible coût.', 'Protégez du temps pour que les idées retenues puissent être développées.', 'Réduisez la pression de la perfection : un test imparfait vaut mieux qu\'une idée enterrée.'],
+    mid:  ['Formalisez un suivi des initiatives en cours avec un responsable par idée.', 'Systématisez le retour d\'expérience après chaque initiative, réussie ou non.'],
+    high: ['Partagez les méthodes d\'implémentation avec les autres équipes.', 'Créez un indicateur de suivi du ratio idées proposées / idées déployées.']
+  }
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let currentScreen = 0;
+let answers = {};
+const labels = ['Jamais','Rarement','Parfois','Souvent','Toujours'];
+
+// ══════════════════════════════════════════════════════
+// BUILD QUESTION SCREENS
+// ══════════════════════════════════════════════════════
+function buildScreens() {
+  dimensions.forEach((dim, di) => {
+    const screen = document.getElementById(`screen-${di + 1}`);
+    const total = dimensions.length;
+    let html = `
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" style="width:${((di+1)/total)*100}%"></div>
+      </div>
+      <div class="dim-section">
+        <div class="dim-header">
+          <div class="dim-badge">${dim.id}</div>
+          <div>
+            <div class="dim-title">${dim.name}</div>
+            <div class="dim-subtitle">${dim.desc}</div>
+          </div>
+        </div>
+    `;
+    dim.questions.forEach((q, qi) => {
+      const key = `${dim.key}_${qi}`;
+      html += `
+        <div class="question-item">
+          <div class="question-text">${qi + 1}. ${q}</div>
+          <div class="rating-row">
+            <span class="rating-label">Jamais</span>
+            <div class="rating-options">
+              ${[1,2,3,4,5].map(v => `
+                <button class="rating-btn" data-key="${key}" data-val="${v}" onclick="selectRating('${key}', ${v}, this)">
+                  ${v}
+                </button>
+              `).join('')}
+            </div>
+            <span class="rating-label">Toujours</span>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    html += `
+      <div class="alert" id="alert-${di+1}">Veuillez répondre à toutes les questions de cette section avant de continuer.</div>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goTo(${di})">← Retour</button>
+        <button class="btn btn-primary" onclick="nextFromDim(${di+1})">
+          ${di < 3 ? 'Section suivante →' : 'Voir mes résultats →'}
+        </button>
+      </div>
+    `;
+    screen.innerHTML = html;
+  });
+}
+
+function selectRating(key, val, btn) {
+  answers[key] = val;
+  const group = document.querySelectorAll(`[data-key="${key}"]`);
+  group.forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function startQuiz() {
+  const firstName = document.getElementById('firstName').value.trim();
+  if (!firstName) {
+    document.getElementById('intro-alert').classList.add('visible');
+    return;
+  }
+  document.getElementById('intro-alert').classList.remove('visible');
+  goTo(1);
+}
+
+function nextFromDim(dimScreenIndex) {
+  const dim = dimensions[dimScreenIndex - 1];
+  const incomplete = dim.questions.some((_, qi) => !answers[`${dim.key}_${qi}`]);
+  const alert = document.getElementById(`alert-${dimScreenIndex}`);
+  if (incomplete) {
+    alert.classList.add('visible');
+    return;
+  }
+  alert.classList.remove('visible');
+  if (dimScreenIndex < 4) {
+    goTo(dimScreenIndex + 1);
+  } else {
+    showResults();
+  }
+}
+
+function goTo(screenIndex) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${screenIndex}`).classList.add('active');
+  document.querySelectorAll('.step-tab').forEach((t, i) => {
+    t.classList.remove('active', 'done');
+    if (i === screenIndex) t.classList.add('active');
+    if (i < screenIndex) t.classList.add('done');
+  });
+  currentScreen = screenIndex;
+  window.scrollTo(0,0);
+}
+
+function restart() {
+  answers = {};
+  buildScreens();
+  goTo(0);
+}
+
+// ══════════════════════════════════════════════════════
+// SCORING
+// ══════════════════════════════════════════════════════
+function getLevel(score, table) {
+  return table.find(l => score >= l.min && score <= l.max) || table[0];
+}
+
+function calcDimScore(dimKey, count) {
+  let total = 0;
+  for (let i = 0; i < count; i++) total += (answers[`${dimKey}_${i}`] || 0);
+  return Math.round((total / (count * 5)) * 100);
+}
+
+function getRecos(dimKey, score) {
+  const bank = recommendations[dimKey];
+  if (score < 40) return bank.low;
+  if (score < 75) return bank.mid;
+  return bank.high;
+}
+
+// ══════════════════════════════════════════════════════
+// RESULTS
+// ══════════════════════════════════════════════════════
+function showResults() {
+  goTo(5);
+
+  const firstName = document.getElementById('firstName').value.trim() || 'Votre équipe';
+  const teamSize  = document.getElementById('teamSize').value || '—';
+  const sector    = document.getElementById('sector').value.trim() || '—';
+  const role      = document.getElementById('role').value || '—';
+  const today     = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+
+  document.getElementById('results-meta').textContent =
+    `${firstName} · ${role} · Équipe de ${teamSize} · Secteur : ${sector} · ${today}`;
+
+  const dimScores = dimensions.map(d => calcDimScore(d.key, d.questions.length));
+  const global = Math.round(dimScores.reduce((a,b) => a+b, 0) / dimScores.length);
+
+  const globalLvl = getLevel(global, levels);
+  document.getElementById('global-score').textContent = global;
+  document.getElementById('global-level').textContent = globalLvl.label;
+  document.getElementById('global-score').style.color = globalLvl.color;
+
+  // dim cards
+  const grid = document.getElementById('dim-results-grid');
+  grid.innerHTML = dimensions.map((d, i) => {
+    const s = dimScores[i];
+    const lvl = getLevel(s, dimLevels);
+    return `
+      <div class="dim-result-card">
+        <div class="dim-result-name">${d.name}</div>
+        <div>
+          <span class="dim-result-score">${s}</span>
+          <span class="dim-result-max">/100</span>
+        </div>
+        <div class="dim-bar-wrap">
+          <div class="dim-bar-fill" style="width:${s}%"></div>
+        </div>
+        <div class="dim-result-level">${lvl.label}</div>
+      </div>
+    `;
+  }).join('');
+
+  // radar
+  drawRadar(dimScores);
+
+  // interpretation
+  const weakDim = dimensions[dimScores.indexOf(Math.min(...dimScores))];
+  const strongDim = dimensions[dimScores.indexOf(Math.max(...dimScores))];
+
+  let interp = `<div class="interpretation-block">
+    <h3>📊 Lecture des résultats</h3>
+    <p>Avec un score global de <strong>${global}/100</strong>, votre équipe se situe au niveau « <strong>${globalLvl.label}</strong> ».
+    Sa principale force réside dans la dimension <strong>${strongDim.name}</strong> (${dimScores[dimensions.indexOf(strongDim)]}/100).
+    La dimension qui mérite le plus d'attention est <strong>${weakDim.name}</strong> (${dimScores[dimensions.indexOf(weakDim)]}/100).</p>
+  </div>`;
+
+  dimensions.forEach((d, i) => {
+    const s = dimScores[i];
+    const recos = getRecos(d.key, s);
+    const lvl = getLevel(s, dimLevels);
+    interp += `
+    <div class="interpretation-block">
+      <h3>${['🔍','💡','📣','⚙️'][i]} ${d.name} — ${s}/100 (${lvl.label})</h3>
+      <p style="margin-bottom:.6rem">${d.desc}</p>
+      <ul class="reco-list">
+        ${recos.map(r => `<li>${r}</li>`).join('')}
+      </ul>
+    </div>`;
+  });
+
+  document.getElementById('interpretation-section').innerHTML = interp;
+
+  // animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.dim-bar-fill').forEach(b => b.style.width = b.style.width);
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════
+// RADAR CHART
+// ══════════════════════════════════════════════════════
+function drawRadar(scores) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) * 0.34;
+  const labels = ['Exploration', 'Génération', 'Championing', 'Application'];
+  const n = scores.length;
+  const vals = scores.map(s => s / 100);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  [0.25, 0.5, 0.75, 1].forEach(fraction => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+      const x = cx + R * fraction * Math.cos(angle);
+      const y = cy + R * fraction * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#d4cdc4';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // axes
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+    ctx.strokeStyle = '#d4cdc4';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // area
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + R * vals[i] * Math.cos(angle);
+    const y = cy + R * vals[i] * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,68,15,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#c8440f';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // dots
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + R * vals[i] * Math.cos(angle);
+    const y = cy + R * vals[i] * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#c8440f';
+    ctx.fill();
+  }
+
+  // labels
+  ctx.font = '600 13px DM Sans, sans-serif';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const lx = cx + (R + 44) * Math.cos(angle);
+    const ly = cy + (R + 44) * Math.sin(angle);
+    ctx.fillText(labels[i], lx, ly);
+    ctx.font = '500 11px DM Sans, sans-serif';
+    ctx.fillStyle = '#8a7e72';
+    ctx.fillText(`${scores[i]}/100`, lx, ly + 16);
+    ctx.font = '600 13px DM Sans, sans-serif';
+    ctx.fillStyle = '#1a1a1a';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PDF GENERATION
+// ══════════════════════════════════════════════════════
+function generatePDF() {
+  const btn = document.getElementById('pdf-btn');
+  btn.textContent = '⏳ Génération en cours…';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pw = 210, ph = 297;
+      const ml = 18, mr = 18, mt = 20;
+      const cw = pw - ml - mr;
+      let y = mt;
+
+      const firstName = document.getElementById('firstName').value.trim() || 'N/A';
+      const teamSize  = document.getElementById('teamSize').value || 'N/A';
+      const sector    = document.getElementById('sector').value.trim() || 'N/A';
+      const role      = document.getElementById('role').value || 'N/A';
+      const today     = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+
+      const dimScores = dimensions.map(d => calcDimScore(d.key, d.questions.length));
+      const global = Math.round(dimScores.reduce((a,b) => a+b, 0) / dimScores.length);
+      const globalLvl = getLevel(global, levels);
+      const weakDim = dimensions[dimScores.indexOf(Math.min(...dimScores))];
+      const strongDim = dimensions[dimScores.indexOf(Math.max(...dimScores))];
+
+      const INK = [26,26,26];
+      const ACC = [200,68,15];
+      const MID = [138,126,114];
+      const CREAM = [245,240,232];
+      const LINE = [212,205,196];
+      const WHITE = [255,255,255];
+
+      function setFont(style, size, color) {
+        doc.setFont('helvetica', style);
+        doc.setFontSize(size);
+        doc.setTextColor(...(color || INK));
+      }
+      function addPage() {
+        doc.addPage();
+        y = mt;
+        // header stripe
+        doc.setFillColor(...INK);
+        doc.rect(0, 0, pw, 10, 'F');
+        setFont('bold', 7, WHITE);
+        doc.text('INDICATEUR DE CRÉATIVITÉ D\'ÉQUIPE', ml, 6.5);
+        doc.text('benjaminchaminade.com', pw - mr, 6.5, { align: 'right' });
+        y = 18;
+      }
+
+      // ── PAGE 1 ──
+      // header band
+      doc.setFillColor(...INK);
+      doc.rect(0, 0, pw, 52, 'F');
+
+      // accent stripe
+      doc.setFillColor(...ACC);
+      doc.rect(0, 52, pw, 3, 'F');
+
+      setFont('normal', 7, [200,68,15]);
+      doc.text('OUTIL D\'ÉVALUATION', ml, 14);
+
+      setFont('bold', 22, WHITE);
+      doc.text('Indicateur de créativité', ml, 26);
+      setFont('bold', 22, WHITE);
+      doc.text('de votre équipe', ml, 35);
+
+      setFont('normal', 8, [200,200,200]);
+      doc.text(`Rapport généré le ${today}`, ml, 47);
+
+      y = 65;
+
+      // meta box
+      doc.setFillColor(...CREAM);
+      doc.roundedRect(ml, y, cw, 28, 1, 1, 'F');
+      setFont('bold', 7, MID);
+      doc.text('INFORMATIONS', ml + 6, y + 6);
+      const meta = [
+        ['Évaluateur', firstName],
+        ['Rôle', role],
+        ['Taille de l\'équipe', teamSize],
+        ['Secteur', sector],
+      ];
+      meta.forEach((m, i) => {
+        const col = i % 2 === 0 ? ml + 6 : ml + cw / 2 + 4;
+        const row = y + 12 + Math.floor(i / 2) * 8;
+        setFont('bold', 8, INK);
+        doc.text(m[0] + ' :', col, row);
+        setFont('normal', 8, INK);
+        doc.text(m[1], col + 32, row);
+      });
+      y += 36;
+
+      // global score
+      doc.setFillColor(...INK);
+      doc.roundedRect(ml, y, cw, 38, 2, 2, 'F');
+
+      setFont('normal', 7, [180,180,180]);
+      doc.text('SCORE GLOBAL DE CRÉATIVITÉ D\'ÉQUIPE', ml + cw/2, y + 8, { align: 'center' });
+
+      setFont('bold', 42, ACC);
+      doc.text(`${global}`, ml + cw/2 - 8, y + 27, { align: 'right' });
+      setFont('normal', 16, [180,180,180]);
+      doc.text('/100', ml + cw/2 + 2, y + 27);
+
+      setFont('bold', 10, WHITE);
+      doc.text(globalLvl.label, ml + cw/2, y + 35, { align: 'center' });
+      y += 46;
+
+      // dim score cards (2×2)
+      const cardW = (cw - 6) / 2;
+      const cardH = 28;
+      dimensions.forEach((d, i) => {
+        const s = dimScores[i];
+        const lvl = getLevel(s, dimLevels);
+        const col = i % 2 === 0 ? ml : ml + cardW + 6;
+        const row = y + Math.floor(i / 2) * (cardH + 4);
+
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(...LINE);
+        doc.setLineWidth(.4);
+        doc.roundedRect(col, row, cardW, cardH, 1, 1, 'FD');
+
+        // accent left bar
+        doc.setFillColor(...ACC);
+        doc.rect(col, row, 3, cardH, 'F');
+
+        setFont('bold', 6.5, MID);
+        doc.text(d.name.toUpperCase(), col + 6, row + 7);
+
+        setFont('bold', 18, INK);
+        doc.text(`${s}`, col + 6, row + 19);
+        setFont('normal', 8, MID);
+        doc.text('/100', col + 18, row + 19);
+
+        // bar
+        const barX = col + 6, barY = row + 23;
+        const barW = cardW - 10;
+        doc.setFillColor(...LINE);
+        doc.roundedRect(barX, barY, barW, 2.5, 1, 1, 'F');
+        doc.setFillColor(...ACC);
+        doc.roundedRect(barX, barY, barW * s / 100, 2.5, 1, 1, 'F');
+
+        setFont('normal', 6, MID);
+        doc.text(lvl.label, col + cardW - 4, row + 7, { align: 'right' });
+      });
+      y += 2 * (cardH + 4) + 8;
+
+      // synthesis
+      setFont('bold', 10, INK);
+      doc.text('Synthèse', ml, y);
+      y += 6;
+
+      doc.setFillColor(...CREAM);
+      doc.roundedRect(ml, y, cw, 22, 1, 1, 'F');
+      setFont('normal', 8.5, INK);
+      const synthText = `Avec un score global de ${global}/100, l'équipe se situe au niveau « ${globalLvl.label} ». Sa principale force est la dimension ${strongDim.name} (${dimScores[dimensions.indexOf(strongDim)]}/100). La dimension ${weakDim.name} (${dimScores[dimensions.indexOf(weakDim)]}/100) mérite le plus d'attention.`;
+      const synthLines = doc.splitTextToSize(synthText, cw - 10);
+      doc.text(synthLines, ml + 5, y + 8);
+      y += 30;
+
+      // radar from canvas
+      try {
+        const canvas = document.getElementById('radarCanvas');
+        const imgData = canvas.toDataURL('image/png');
+        const rW = cw * 0.62, rH = rW * (360/480);
+        const rX = ml + (cw - rW) / 2;
+        doc.addImage(imgData, 'PNG', rX, y, rW, rH);
+        y += rH + 6;
+      } catch(e) {}
+
+      // source note page 1
+      setFont('normal', 6.5, MID);
+      doc.text('Rapport produit par benjaminchaminade.com', ml, ph - 12);
+      doc.text(`${today}`, pw - mr, ph - 12, { align: 'right' });
+
+      // ── PAGE 2 : RECOMMENDATIONS ──
+      addPage();
+
+      setFont('bold', 16, INK);
+      doc.text('Recommandations par dimension', ml, y);
+      y += 4;
+      doc.setFillColor(...ACC);
+      doc.rect(ml, y, 24, 2, 'F');
+      y += 10;
+
+      dimensions.forEach((d, i) => {
+        const s = dimScores[i];
+        const lvl = getLevel(s, dimLevels);
+        const recos = getRecos(d.key, s);
+
+        if (y > ph - 55) { addPage(); }
+
+        // section header
+        doc.setFillColor(...INK);
+        doc.roundedRect(ml, y, cw, 12, 1, 1, 'F');
+        doc.setFillColor(...ACC);
+        doc.rect(ml, y, 4, 12, 'F');
+        setFont('bold', 9, WHITE);
+        doc.text(`${i + 1}. ${d.name}`, ml + 8, y + 7.5);
+        setFont('normal', 8, [180,180,180]);
+        doc.text(`${s}/100 — ${lvl.label}`, pw - mr, y + 7.5, { align: 'right' });
+        y += 16;
+
+        recos.forEach(r => {
+          if (y > ph - 20) { addPage(); }
+          doc.setFillColor(...CREAM);
+          doc.setDrawColor(...LINE);
+          doc.setLineWidth(.3);
+          const lines = doc.splitTextToSize(r, cw - 14);
+          const rH2 = lines.length * 5 + 7;
+          doc.roundedRect(ml, y, cw, rH2, 1, 1, 'FD');
+          doc.setFillColor(...ACC);
+          doc.rect(ml, y + rH2/2 - 1, 3, 2, 'F');
+          setFont('normal', 8, INK);
+          doc.text(lines, ml + 8, y + 6);
+          y += rH2 + 3;
+        });
+        y += 5;
+      });
+
+      // ── PAGE 3 : SOURCES ──
+      addPage();
+
+      setFont('bold', 14, INK);
+      doc.text('Base scientifique', ml, y);
+      y += 4;
+      doc.setFillColor(...ACC);
+      doc.rect(ml, y, 18, 2, 'F');
+      y += 10;
+
+      setFont('normal', 8.5, INK);
+      const sourceIntro = 'Cet indicateur a été développé sur la base des recherches présentées dans l\'article « Comment mesurer la créativité de son équipe » disponible sur benjaminchaminade.com/mesure-creativite-equipe/';
+      const siLines = doc.splitTextToSize(sourceIntro, cw);
+      doc.text(siLines, ml, y);
+      y += siLines.length * 5 + 8;
+
+      const refs = [
+        'Amabile, T.M. (1982). Social psychology of creativity: A consensual assessment technique. Journal of Personality and Social Psychology, 43, 997-1013.',
+        'Amabile, T.M. (1996). Creativity in context. Westview.',
+        'Batey, M. (2012). The measurement of creativity: From definitional consensus to the introduction of a new heuristic framework. Creativity Research Journal, 24(1), 55-65.',
+        'Csikszentmihalyi, M. (1999). Implications of a systems perspective for the study of creativity. In R.J. Sternberg (Ed.), Creativity research handbook. Cambridge University Press.',
+        'De Jong, J.P.J. & Den Hartog, D.N. (2008). Innovative work behavior: Measurement and validation. EIM Business and Policy Research.',
+        'Guilford, J.P. (1967). The nature of human intelligence. McGraw-Hill.',
+        'Kanter, R.M. (1988). When a thousand flowers bloom. Research in Organizational Behavior, 10, 169-211.',
+        'Mumford, M.D. (2003). Taking stock in taking stock. Creativity Research Journal, 15, 147-151.',
+        'Scott, S.G. & Bruce, R.A. (1994). Determinants of innovative behavior. Academy of Management Journal, 38, 1442-1465.',
+        'Torrance, E.P. (1974). Torrance tests of creative thinking. Personnel Press.',
+      ];
+
+      refs.forEach(ref => {
+        if (y > ph - 22) { addPage(); }
+        const lines = doc.splitTextToSize(ref, cw - 8);
+        doc.setFillColor(...CREAM);
+        doc.setDrawColor(...LINE);
+        doc.setLineWidth(.3);
+        const rH2 = lines.length * 4.5 + 6;
+        doc.roundedRect(ml, y, cw, rH2, 1, 1, 'FD');
+        setFont('normal', 7, INK);
+        doc.text(lines, ml + 6, y + 5);
+        y += rH2 + 3;
+      });
+
+      y += 8;
+      if (y > ph - 35) addPage();
+      doc.setFillColor(...INK);
+      doc.roundedRect(ml, y, cw, 22, 2, 2, 'F');
+      setFont('bold', 9, WHITE);
+      doc.text('Vous souhaitez aller plus loin ?', ml + cw/2, y + 8, { align: 'center' });
+      setFont('normal', 8, [200,200,200]);
+      doc.text('Conférences, ateliers et conseil en créativité managériale :', ml + cw/2, y + 14, { align: 'center' });
+      setFont('bold', 8.5, ACC);
+      doc.text('www.benjaminchaminade.com', ml + cw/2, y + 20, { align: 'center' });
+
+      doc.save(`indicateur-creativite-equipe-${today.replace(/ /g,'-')}.pdf`);
+
+    } catch(err) {
+      console.error(err);
+      alert('Une erreur s\'est produite lors de la génération du PDF. Veuillez réessayer.');
+    }
+
+    btn.innerHTML = '↓ Télécharger le rapport PDF';
+    btn.disabled = false;
+  }, 200);
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+buildScreens();
+</script>
+</body>
+</html>
