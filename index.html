@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Indicateur de créativité d'équipe — Benjamin Chaminade</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #1a1a1a;
@@ -546,6 +545,29 @@
     .rating-btn { width: 2rem; height: 2rem; font-size: .75rem; }
     .global-score-number { font-size: 3.5rem; }
   }
+
+  /* ── PRINT / PDF ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: white !important; }
+    header { background: #c8440f !important; color: white !important; }
+    header h1 { color: #ffffff !important; }
+    .steps-bar, .btn-row, .btn, #pdf-btn, .source-note a[onclick] { display: none !important; }
+    .container { max-width: 100% !important; padding: 0 1rem !important; }
+    .screen { display: block !important; }
+    #screen-0, #screen-1, #screen-2, #screen-3, #screen-4 { display: none !important; }
+    #screen-5 { display: block !important; }
+    .results-header { margin-bottom: 1rem; }
+    .global-score-wrap { background: #1a1a1a !important; color: white !important; page-break-inside: avoid; }
+    .dim-results-grid { page-break-inside: avoid; }
+    .dim-result-card { background: white !important; border: 1px solid #d4cdc4 !important; }
+    .dim-bar-fill { background: #c8440f !important; }
+    .radar-wrap { page-break-inside: avoid; }
+    .interpretation-block { page-break-inside: avoid; border: 1px solid #d4cdc4 !important; }
+    .reco-list li::before { color: #c8440f !important; }
+    .source-note { border-top: 1px solid #d4cdc4; font-size: .7rem; }
+    @page { margin: 15mm 12mm; size: A4; }
+  }
 </style>
 </head>
 <body>
@@ -673,7 +695,7 @@
     <div class="btn-row">
       <button class="btn btn-outline" onclick="restart()">← Recommencer</button>
       <button class="btn btn-success" onclick="generatePDF()" id="pdf-btn">
-        ↓ Télécharger le rapport PDF
+        🖨 Imprimer / Enregistrer en PDF
       </button>
     </div>
 
@@ -689,6 +711,7 @@
 </div><!-- /container -->
 
 <script>
+
 // ══════════════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════════════
@@ -1089,313 +1112,17 @@ function drawRadar(scores) {
 }
 
 // ══════════════════════════════════════════════════════
-// PDF GENERATION
+// PDF GENERATION — via impression navigateur
 // ══════════════════════════════════════════════════════
 function generatePDF() {
-  const btn = document.getElementById('pdf-btn');
-  btn.textContent = '⏳ Chargement…';
-  btn.disabled = true;
+  // S'assurer que les résultats sont affichés
+  if (currentScreen !== 5) return;
 
-  // Charger jsPDF dynamiquement seulement au moment du clic
-  function doGenerate() {
-    btn.textContent = '⏳ Génération en cours…';
-
-    // Redessiner le radar sur un canvas offscreen haute résolution
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = 600; offCanvas.height = 600;
-    drawRadarOnCanvas(offCanvas, dimensions.map(d => calcDimScore(d.key, d.questions.length)));
-
-    setTimeout(() => {
-      try {
-        const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-      const pw = 210, ph = 297;
-      const ml = 18, mr = 18;
-      const cw = pw - ml - mr;
-      let y = 0;
-
-      const firstName = document.getElementById('firstName').value.trim() || 'N/A';
-      const teamSize  = document.getElementById('teamSize').value || 'N/A';
-      const sector    = document.getElementById('sector').value.trim() || 'N/A';
-      const role      = document.getElementById('role').value || 'N/A';
-      const today     = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
-
-      const dimScores = dimensions.map(d => calcDimScore(d.key, d.questions.length));
-      const global    = Math.round(dimScores.reduce((a,b) => a+b, 0) / dimScores.length);
-      const globalLvl = getLevel(global, levels);
-      const weakIdx   = dimScores.indexOf(Math.min(...dimScores));
-      const strongIdx = dimScores.indexOf(Math.max(...dimScores));
-      const weakDim   = dimensions[weakIdx];
-      const strongDim = dimensions[strongIdx];
-
-      const INK   = [26,26,26];
-      const ACC   = [200,68,15];
-      const MID   = [138,126,114];
-      const CREAM = [245,240,232];
-      const LINE  = [212,205,196];
-      const WHITE = [255,255,255];
-      const LIGHT = [180,180,180];
-
-      function sf(style, size, color) {
-        doc.setFont('helvetica', style);
-        doc.setFontSize(size);
-        doc.setTextColor(...(color || INK));
-      }
-
-      function pageHeader() {
-        doc.setFillColor(...ACC);
-        doc.rect(0, 0, pw, 9, 'F');
-        sf('bold', 7, WHITE);
-        doc.text(`INDICATEUR DE CRÉATIVITÉ D'ÉQUIPE`, ml, 6);
-        doc.text('benjaminchaminade.com', pw - mr, 6, { align: 'right' });
-      }
-
-      function pageFooter(label) {
-        sf('normal', 6.5, MID);
-        doc.text(label || ('Rapport produit par benjaminchaminade.com · ' + today), ml, ph - 8);
-      }
-
-      // ═══════════════════════════════
-      // PAGE 1 — RÉSULTATS
-      // ═══════════════════════════════
-
-      // Header orange pleine largeur
-      doc.setFillColor(...ACC);
-      doc.rect(0, 0, pw, 50, 'F');
-
-      sf('normal', 7, [255,220,200]);
-      doc.text(`OUTIL D'ÉVALUATION`, ml, 13);
-
-      sf('bold', 20, WHITE);
-      doc.text('Indicateur de créativité', ml, 25);
-      doc.text('de votre équipe', ml, 34);
-
-      sf('normal', 8, [255,220,200]);
-      doc.text('Rapport généré le ' + today, ml, 44);
-
-      y = 58;
-
-      // Bloc infos
-      doc.setFillColor(...CREAM);
-      doc.setDrawColor(...LINE);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(ml, y, cw, 26, 1, 1, 'FD');
-      sf('bold', 6.5, MID);
-      doc.text('INFORMATIONS', ml + 5, y + 6);
-
-      const metaItems = [
-        ['Évaluateur', firstName], ['Rôle', role],
-        ['Équipe', teamSize],      ['Secteur', sector]
-      ];
-      metaItems.forEach((m, i) => {
-        const col = (i % 2 === 0) ? ml + 5 : ml + cw / 2 + 4;
-        const row = y + 13 + Math.floor(i / 2) * 8;
-        sf('bold', 8, INK); doc.text(m[0] + ' :', col, row);
-        sf('normal', 8, INK); doc.text(m[1], col + 28, row);
-      });
-      y += 33;
-
-      // Score global
-      doc.setFillColor(...INK);
-      doc.roundedRect(ml, y, cw, 36, 2, 2, 'F');
-      sf('normal', 6.5, LIGHT);
-      doc.text(`SCORE GLOBAL DE CRÉATIVITÉ D'ÉQUIPE`, ml + cw / 2, y + 8, { align: 'center' });
-      sf('bold', 40, ACC);
-      doc.text(String(global), ml + cw / 2 - 6, y + 26, { align: 'right' });
-      sf('normal', 14, LIGHT);
-      doc.text('/100', ml + cw / 2 + 2, y + 26);
-      sf('bold', 9.5, WHITE);
-      doc.text(globalLvl.label, ml + cw / 2, y + 33, { align: 'center' });
-      y += 43;
-
-      // 4 cartes dimensions en 2×2
-      const cardW = (cw - 5) / 2;
-      const cardH = 26;
-      dimensions.forEach((d, i) => {
-        const s   = dimScores[i];
-        const lvl = getLevel(s, dimLevels);
-        const col = (i % 2 === 0) ? ml : ml + cardW + 5;
-        const row = y + Math.floor(i / 2) * (cardH + 4);
-
-        doc.setFillColor(...WHITE);
-        doc.setDrawColor(...LINE);
-        doc.setLineWidth(0.3);
-        doc.roundedRect(col, row, cardW, cardH, 1, 1, 'FD');
-        doc.setFillColor(...ACC);
-        doc.rect(col, row, 3, cardH, 'F');
-
-        sf('bold', 6, MID);
-        doc.text(d.name.toUpperCase(), col + 6, row + 6.5);
-        sf('normal', 5.5, MID);
-        doc.text(lvl.label, col + cardW - 3, row + 6.5, { align: 'right' });
-
-        sf('bold', 17, INK);
-        doc.text(String(s), col + 6, row + 17);
-        sf('normal', 7.5, MID);
-        doc.text('/100', col + 6 + (s >= 100 ? 14 : s >= 10 ? 11 : 8), row + 17);
-
-        const bx = col + 6, by = row + 21, bw = cardW - 10;
-        doc.setFillColor(...LINE);
-        doc.roundedRect(bx, by, bw, 2, 1, 1, 'F');
-        doc.setFillColor(...ACC);
-        doc.roundedRect(bx, by, bw * s / 100, 2, 1, 1, 'F');
-      });
-      y += 2 * (cardH + 4) + 6;
-
-      // Synthèse
-      const synthText = `Avec un score global de ${global}/100, l'équipe se situe au niveau « ${globalLvl.label} ». Sa principale force est la dimension ${strongDim.name} (${dimScores[strongIdx]}/100). La dimension ${weakDim.name} (${dimScores[weakIdx]}/100) mérite le plus d'attention.`;
-      const synthLines = doc.splitTextToSize(synthText, cw - 10);
-      const synthH = synthLines.length * 5 + 12;
-
-      doc.setFillColor(...CREAM);
-      doc.setDrawColor(...LINE);
-      doc.roundedRect(ml, y, cw, synthH, 1, 1, 'FD');
-      sf('normal', 8, INK);
-      doc.text(synthLines, ml + 5, y + 8);
-      y += synthH + 6;
-
-      // Radar
-      const radarImg = offCanvas.toDataURL('image/png');
-      const rW = cw * 0.58;
-      const rH = rW;
-      const rX = ml + (cw - rW) / 2;
-
-      // Vérifier si le radar tient sur la page 1
-      if (y + rH > ph - 18) {
-        pageFooter();
-        doc.addPage();
-        pageHeader();
-        y = 18;
-      }
-
-      doc.addImage(radarImg, 'PNG', rX, y, rW, rH);
-      pageFooter();
-
-      // ═══════════════════════════════
-      // PAGE 2 — RECOMMANDATIONS
-      // ═══════════════════════════════
-      doc.addPage();
-      pageHeader();
-      y = 18;
-
-      sf('bold', 15, INK);
-      doc.text('Recommandations par dimension', ml, y);
-      y += 3;
-      doc.setFillColor(...ACC);
-      doc.rect(ml, y, 22, 2, 'F');
-      y += 9;
-
-      dimensions.forEach((d, i) => {
-        const s    = dimScores[i];
-        const lvl  = getLevel(s, dimLevels);
-        const recos = getRecos(d.key, s);
-
-        if (y > ph - 60) { doc.addPage(); pageHeader(); y = 18; }
-
-        // En-tête dimension
-        doc.setFillColor(...INK);
-        doc.roundedRect(ml, y, cw, 11, 1, 1, 'F');
-        doc.setFillColor(...ACC);
-        doc.rect(ml, y, 3.5, 11, 'F');
-        sf('bold', 8.5, WHITE);
-        doc.text((i + 1) + '. ' + d.name, ml + 7, y + 7.5);
-        sf('normal', 7.5, LIGHT);
-        doc.text(s + '/100 — ' + lvl.label, pw - mr, y + 7.5, { align: 'right' });
-        y += 14;
-
-        recos.forEach(r => {
-          if (y > ph - 22) { doc.addPage(); pageHeader(); y = 18; }
-          const lines = doc.splitTextToSize(r, cw - 14);
-          const rH2 = lines.length * 4.8 + 8;
-          doc.setFillColor(...CREAM);
-          doc.setDrawColor(...LINE);
-          doc.setLineWidth(0.25);
-          doc.roundedRect(ml, y, cw, rH2, 1, 1, 'FD');
-          doc.setFillColor(...ACC);
-          doc.rect(ml, y, 3, rH2, 'F');
-          sf('normal', 8, INK);
-          doc.text(lines, ml + 7, y + 6.5);
-          y += rH2 + 3;
-        });
-        y += 4;
-      });
-
-      pageFooter();
-
-      // ═══════════════════════════════
-      // PAGE 3 — SOURCES
-      // ═══════════════════════════════
-      doc.addPage();
-      pageHeader();
-      y = 18;
-
-      sf('bold', 14, INK);
-      doc.text('Base scientifique', ml, y);
-      y += 3;
-      doc.setFillColor(...ACC);
-      doc.rect(ml, y, 18, 2, 'F');
-      y += 9;
-
-      sf('normal', 8.5, INK);
-      const intro = `Cet indicateur a été développé sur la base des recherches présentées dans l'article « Comment mesurer la créativité de son équipe » disponible sur benjaminchaminade.com/mesure-creativite-equipe/`;
-      const introLines = doc.splitTextToSize(intro, cw);
-      doc.text(introLines, ml, y);
-      y += introLines.length * 5 + 7;
-
-      const refs = [
-        'Amabile, T.M. (1982). Social psychology of creativity: A consensual assessment technique. Journal of Personality and Social Psychology, 43, 997-1013.',
-        'Amabile, T.M. (1996). Creativity in context. Westview.',
-        'Batey, M. (2012). The measurement of creativity: From definitional consensus to the introduction of a new heuristic framework. Creativity Research Journal, 24(1), 55-65.',
-        'Csikszentmihalyi, M. (1999). Implications of a systems perspective for the study of creativity. In R.J. Sternberg (Ed.), Creativity research handbook. Cambridge University Press.',
-        'De Jong, J.P.J. & Den Hartog, D.N. (2008). Innovative work behavior: Measurement and validation. EIM Business and Policy Research.',
-        'Guilford, J.P. (1967). The nature of human intelligence. McGraw-Hill.',
-        'Kanter, R.M. (1988). When a thousand flowers bloom. Research in Organizational Behavior, 10, 169-211.',
-        'Mumford, M.D. (2003). Taking stock in taking stock. Creativity Research Journal, 15, 147-151.',
-        'Scott, S.G. & Bruce, R.A. (1994). Determinants of innovative behavior. Academy of Management Journal, 38, 1442-1465.',
-        'Torrance, E.P. (1974). Torrance tests of creative thinking. Personnel Press.',
-      ];
-
-      refs.forEach(ref => {
-        if (y > ph - 22) { doc.addPage(); pageHeader(); y = 18; }
-        const lines = doc.splitTextToSize(ref, cw - 8);
-        const rH2 = lines.length * 4.5 + 7;
-        doc.setFillColor(...CREAM);
-        doc.setDrawColor(...LINE);
-        doc.setLineWidth(0.25);
-        doc.roundedRect(ml, y, cw, rH2, 1, 1, 'FD');
-        sf('normal', 7, INK);
-        doc.text(lines, ml + 5, y + 5.5);
-        y += rH2 + 3;
-      });
-
-      y += 8;
-      if (y > ph - 36) { doc.addPage(); pageHeader(); y = 18; }
-
-      doc.setFillColor(...INK);
-      doc.roundedRect(ml, y, cw, 22, 2, 2, 'F');
-      doc.setFillColor(...ACC);
-      doc.rect(ml, y, 4, 22, 'F');
-      sf('bold', 9, WHITE);
-      doc.text('Vous souhaitez aller plus loin ?', ml + cw / 2, y + 8, { align: 'center' });
-      sf('normal', 8, LIGHT);
-      doc.text('Conférences, ateliers et conseil en créativité managériale :', ml + cw / 2, y + 14, { align: 'center' });
-      sf('bold', 8.5, ACC);
-      doc.text('www.benjaminchaminade.com', ml + cw / 2, y + 20, { align: 'center' });
-
-      pageFooter();
-
-      doc.save('indicateur-creativite-equipe-' + today.replace(/ /g, '-') + '.pdf');
-
-    } catch(err) {
-      console.error(err);
-      alert('Erreur lors de la génération du PDF : ' + err.message);
-    }
-
-    btn.innerHTML = '↓ Télécharger le rapport PDF';
-    btn.disabled = false;
-  }, 300);
+  // Petit délai pour que le radar soit dessiné
+  setTimeout(function() {
+    window.print();
+  }, 100);
 }
-} // fin generatePDF
 
 // Radar dessiné sur un canvas arbitraire (pour PDF haute résolution)
 function drawRadarOnCanvas(canvas, scores) {
